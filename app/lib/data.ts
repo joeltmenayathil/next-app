@@ -66,10 +66,10 @@ export async function fetchBudgetDetailsData(id:string, sessid:RequestCookie|und
         type Dictionary<T> = { [key: string]: T };
         const output= await response.data
         const totalOpening = Number(output.details.footerData.TotOpening.replace(/,/g, ''))
-        let totalClosing: number | string = NaN;
+        let totalClosing:number
         totalClosing = Number(output.details.footerData.TotCr.replace(/,/g, ''))
-        totalClosing = isNaN(totalClosing) ? '-' : totalClosing.toString();
-        const totalBalance = output.details.footerData.TotBal.replace(/,/g, '');
+        totalClosing = isNaN(totalClosing) ? 0 : totalClosing
+        const totalBalance = Number(output.details.footerData.TotBal.replace(/,/g, ''));
         const sum = output.details.tableData.map((curr: Dictionary<string>) =>{return curr.INV_Data.length} )
         const totalInvoices = sum.reduce((accumulator: number, currentValue: number) => accumulator + currentValue, 0);
 
@@ -142,14 +142,12 @@ export async function fetchBudgetData(query: string, page: number, sessid:Reques
           });
           const regex = new RegExp(query, 'i');
           const temp1 = response.data.details.participants.filter(client => regex.test(client.name))
-          // console.log(temp1)
           const temp= temp1.slice((page-1)*12,page*12)     
           const newKey = 'srvid';
           const final = temp.map(client => ({
             ...client,
             [newKey]: response.data.details.graphDetails[client.id][0].SRVID
         }));        
-          
         return final
     } catch (error) {
         console.error('Error fetching data:', error);
@@ -163,7 +161,7 @@ export async function fetchTotalClientPages(query:string, sessid: RequestCookie|
   formData.append('CON_Id', con_id?.value);
   const cookieval="PHPSESSID="+String(sessid)
   try{
-      const response= await axios.post('https://crm.simpleplans.com.au/api/?bnQvVjEvYnVkZ2V0R3JhcGhwYXJ0aWNpcGEmcz05=null', formData, {
+      const response = await axios.post('https://crm.simpleplans.com.au/api/?bnQvVjEvYnVkZ2V0R3JhcGhwYXJ0aWNpcGEmcz05=null', formData, {
           headers: {
             ...formData.getHeaders(),
             'Cookie': cookieval,

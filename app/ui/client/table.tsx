@@ -41,7 +41,7 @@ export default async function ClientTable(
                 <div className="flex items-center justify-between border-b pb-4">
                     <div className="mb-2 flex items-center">
                     <Link key={client.id} href={`/client/${client.srvid}`} >
-                        <p>{client.name}</p>
+                        <p className='text-black'>{client.name}</p>
                     </Link>
                     </div>
                 </div>
