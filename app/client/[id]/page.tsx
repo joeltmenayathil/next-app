@@ -1,18 +1,20 @@
 import CardWrapper from '@/app/ui/client/cards';
-import { Suspense } from 'react';
-import {CardsSkeleton} from '@/app/ui/skeletons';
 import { fetchBudgetDetailsData } from '@/app/lib/data';
-import PieChart from '@/app/ui/client/budgetdetails/piechart';
+import BarChart from '@/app/ui/client/budgetdetails/barchart';
 import CardDetails from '@/app/ui/client/budgetdetails/carddetails';
-import CardDetails2 from '@/app/ui/client/budgetdetails/carddetails2';
-import ButtonWithModal from '@/app/ui/client/budgetdetails/invoicebutton';
-import { NextResponse, NextRequest } from 'next/server';
 import validatecookie from '../validatecookie';
 import { cookies } from 'next/headers'
+import dynamic from 'next/dynamic';
+const ToggleContent = dynamic(() => import('@/app/ui/client/budgetdetails/togglecontent'), {
+  ssr: false,
+});
+
+const formatNumberWithCommas = (number: number): string => {
+  return number.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+};
 
 
-export default async function Page({ params, req, res }: { params: { id: string },  req : NextRequest,
-  res : NextResponse }) 
+export default async function Page({ params }: { params: { id: string }}) 
 {
   const cookieStore = cookies()
   const sessid=cookieStore.get('PHPSESSID')
@@ -25,51 +27,46 @@ export default async function Page({ params, req, res }: { params: { id: string 
     totalInvoices,
   } = await fetchBudgetDetailsData(params.id,sessid);
 console.log(output.details.tableData)
+let count1=0
+let netbal=0
+let netspent=0
+let nettotal=0
+output.details.tableData?.map((table)=>{
+  console.log(table.Category)
+  if(table.Category?.includes("(01)")||table.Category?.includes("(02)")||table.Category?.includes("(03)")||table.Category?.includes("(04)")){
+    count1=count1+1;
+    netbal=netbal+(isNaN(Number(table.OpenBal.replace(/,/g, '')))?0:Number(table.OpenBal.replace(/,/g, '')))
+    netspent=netspent+(isNaN(Number(table.Credit.replace(/,/g, '')))?0:Number(table.Credit.replace(/,/g, '')))
+    nettotal=nettotal+(isNaN(Number(table.Close.replace(/,/g, '')))?0:Number(table.Close.replace(/,/g, '')))
+  }
+})
 
-
+console.log(count1,netbal,netspent)
 return(
   <main>
-  <h1 className={`font-medium mb-4 text-xl md:text-2xl`}>
+  <h1 className={`font-medium mb-4 text-xl md:text-2xl text-black`}>
   Budget Overview
   </h1>
   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-  <Suspense fallback={<CardsSkeleton />}>
     <CardWrapper totalOpening={totalOpening} totalClosing={totalClosing} totalBalance={totalBalance} totalInvoices={totalInvoices}/>
-  </Suspense>
   </div>
   <br/>
-  <h1 className={` font-medium mb-4 text-xl md:text-2xl`}>Budget Details</h1>
-  {output.details.tableData?.map((table)=>{
-    let balance = Number(table.OpenBal.replace(/,/g, ''))
-    let spent = Number(table.Credit.replace(/,/g, ''))
-    let total = Number(table.Close.replace(/,/g, ''))
-    let actual = Number(table.Act.replace(/%/g, ''))
-    let projected = Number(table.Pro.replace(/%/g, ''))
-    let variations = Number(table.Var.replace(/%/g, ''))
-    balance=isNaN(balance)?0:balance
-    spent=isNaN(spent)?0:spent
-    total=isNaN(total)?0:total
-    actual=isNaN(actual)?0:actual
-    projected=isNaN(projected)?0:projected
-    variations=isNaN(variations)?0:variations
-    let invdata=table.INV_Data
-    
-    return (
-    <div className="mt-6 flow-root">
+  <h1 className={` font-medium mb-4 text-xl md:text-2xl text-black`}>Budget Details</h1>
+
+  { count1>1 ? (
+  <div className="mt-6 flow-root">
     <div className="inline-block min-w-full align-middle">
-      <h1 className='text-lg bg-lightBlue-500'>{table.Category}</h1>
-      <div className=" gap-10 flex flex-wrap rounded-lg bg-gray-50 p-2 md:pt-2 justify-center md:justify-start">
-      <PieChart balance={balance} spent={spent}/>
-      <CardDetails total={total} balance={balance} spent={spent}/>
-      <CardDetails2 actual={actual} projected={projected} variations={variations}/>
-      <div className='hidden md:block rounded-2xl shadow-lg md:flex-col flex-row space-y-0 space-x-4 items-center md:space-y-4 md:space-x-0 p-4 md:pt-40'>
-      <ButtonWithModal tableData={invdata}></ButtonWithModal>
-      </div>
+      <h1 className='text-lg bg-lightBlue-500 text-black'>Core Funding</h1>
+      <div className=" gap-32 flex flex-wrap rounded-lg bg-gray-50 p-2 md:pt-2 justify-center md:justify-start">
+      <BarChart balance={netbal} spent={netspent}/>
+      <CardDetails total={nettotal} balance={netbal} spent={netspent}/>
       </div>
     </div>
   </div>
-)
-})}
+) : (<div></div>)
+  }
+<br></br>
+<ToggleContent output={output} />
       
   </main>
  )

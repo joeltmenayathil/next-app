@@ -1,6 +1,6 @@
 'use client'
-import { useState, Fragment } from 'react';
-import { Dialog, DialogBackdrop, DialogTitle,DialogPanel,Transition } from '@headlessui/react';
+import { useState} from 'react';
+import { Dialog, DialogTitle} from '@headlessui/react';
 
 interface TableData {
   [key: string]: string | number;
